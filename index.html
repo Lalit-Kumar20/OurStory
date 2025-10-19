@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Story</title>
+
+    <!-- Add romantic fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Carousel styles + page background for a love blog -->
+    <style>
+        /* Page background: soft pastel gradient + subtle heart pattern */
+        :root{
+            --accent:#8a2b4a;
+            --muted:#5a3743;
+            --paper:#fff6f9;
+        }
+
+        html,body { height:100%; }
+        body {
+            margin: 0;
+            min-height: 100%;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            color: var(--muted);
+            background-color: #fff0f8;
+            /* layered background: soft gradient + warm wash */
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(255,200,220,0.08), transparent 8%),
+                radial-gradient(circle at 90% 80%, rgba(255,230,230,0.06), transparent 10%),
+                linear-gradient(135deg, #fff7fb 0%, #ffeef6 50%, #fff 100%);
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+        }
+
+        /* subtle repeated heart pattern overlay (low-contrast) */
+        body::before{
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff9fbf' fill-opacity='0.06' d='M12 21s-7-4.9-9-7.1C-0.9 10.2 3 4 7 6c1.9 1 2 3 5 5 3-2 3.1-4 5-5 4-2 7.9 4.2 4 7.9C19 16.1 12 21 12 21z'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            z-index: 0;
+            mix-blend-mode: overlay;
+            opacity: 0.6;
+        }
+
+        /* Content/header styles */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            text-align: center;
+            margin: 2.5rem 1rem 0.25rem;
+            font-size: clamp(1.8rem, 3vw, 2.6rem);
+            letter-spacing: 0.4px;
+            line-height: 1.05;
+            z-index:1;
+            position: relative;
+        }
+        .story {
+            max-width: 820px;
+            margin: 0.5rem auto 1.75rem;
+            text-align: left;
+            color: #6b4450;
+            z-index:1;
+            position: relative;
+            padding: 1rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,250,250,0.5));
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(138,43,74,0.06);
+            line-height: 1.6;
+        }
+
+        .lead {
+            font-size: 1.03rem;
+            margin: 0 0 0.75rem 0;
+        }
+
+        /* Drop cap for first paragraph */
+        .lead:first-of-type::first-letter {
+            float: left;
+            font-family: 'Playfair Display', serif;
+            font-size: 3.2rem;
+            line-height: 0.85;
+            margin-right: 0.5rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Reveal-on-scroll for each paragraph/line */
+        .reveal {
+            opacity: 0;
+            transform: translateY(16px) scale(0.995);
+            transition: opacity 560ms cubic-bezier(.2,.9,.3,1), transform 560ms cubic-bezier(.2,.9,.3,1);
+            will-change: opacity, transform;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* Stagger support: each element can set --i to stagger delays */
+        .reveal { transition-delay: calc(var(--i, 0) * 120ms); }
+
+        /* Carousel (kept from existing, with small visual tweaks) */
+        .carousel {
+            position: relative;
+            /* updated to favor phone/portrait photos */
+            max-width: 420px;                 /* cap width for portrait images */
+            width: min(92vw, 420px);          /* responsive width on small screens */
+            aspect-ratio: 9 / 16;             /* tall container for phone photos */
+            margin: 2rem auto 4rem;
+            overflow: hidden;
+            border-radius: 12px;
+            z-index: 1; /* above the background overlay */
+            box-shadow: 0 10px 30px rgba(138,43,74,0.10);
+            background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,250,250,0.35));
+            backdrop-filter: blur(4px);
+        }
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease;
+            will-change: transform;
+            height: 100%; /* ensure track fills the tall container */
+        }
+        .carousel-slide {
+            min-width: 100%;
+            box-sizing: border-box;
+            height: 100%; /* make each slide fill container height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000; /* fallback background while image loads */
+        }
+        .carousel-slide img {
+            /* make images fill the slide and crop to preserve portrait framing */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(138,43,74,0.85);
+            color: #fff;
+            border: none;
+            padding: 0.5rem 0.8rem;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            box-shadow: 0 6px 18px rgba(138,43,74,0.18);
+        }
+        .carousel-btn:focus { outline: 2px solid rgba(255,255,255,0.9); }
+        .carousel-btn.prev { left: 12px; }
+        .carousel-btn.next { right: 12px; }
+
+        .carousel-dots {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .carousel-dot.active { background: #fff; transform: scale(1.05); }
+
+        /* Small screens */
+        @media (max-width: 720px) {
+            h1 {
+                font-size: 1.8rem; /* Adjust heading size */
+            }
+            .story {
+                padding: 0.75rem; /* Adjust padding */
+            }
+        }
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6rem; /* Further adjust heading size for small screens */
+                margin-top: 1.6rem; /* Adjust margin */
+            }
+            .lead:first-of-type::first-letter {
+                font-size: 2.4rem; /* Adjust drop cap size */
+            }
+            .carousel-btn {
+                padding: 0.4rem 0.6rem; /* Adjust button padding */
+            }
+            .footer {
+                padding: 2rem 0.5rem; /* Adjust footer padding */
+            }
+        }
+
+        /* Footer styles */
+ .footer {
+    position: relative;
+    z-index: 10; /* ensures it's above the heart overlay */
+    text-align: center;
+    padding: 3rem 1rem;
+    margin-top: 3rem;
+    background: linear-gradient(180deg, #ffe6ef 0%, #ffccd8 100%);
+    border-top: 2px solid var(--accent);
+    width: 100%;
+    box-sizing: border-box;
+    color: #4a1f2f;
+    box-shadow: 0 -4px 20px rgba(138,43,74,0.15);
+}
+
+.otp-overlay, .auth-step {
+    position: relative;
+}
+
+.auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #fff7fb 0%, #ffeef6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.auth-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(138,43,74,0.15);
+    text-align: center;
+    max-width: 90%;
+    width: 360px;
+}
+
+.auth-container h2 {
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    font-family: 'Playfair Display', serif;
+}
+
+.auth-container p.lead-text {
+    margin: 0 0 1rem 0;
+    color: #6b4450;
+    font-size: 0.95rem;
+}
+
+/* Inputs */
+.auth-container input {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    font-size: 1.05rem;
+    text-align: center;
+    margin: 0.6rem 0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+}
+
+.auth-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+
+.btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.btn.secondary {
+    background: #f1f1f1;
+    color: var(--muted);
+    box-shadow: none;
+}
+
+/* error message */
+.error-message {
+    color: #e74c3c;
+    font-size: 0.9rem;
+    min-height: 20px;
+    margin-top: 0.75rem;
+}
+
+/* Hide main content initially until authenticated. Show auth overlay instead. */
+body > *:not(#authOverlay) {
+    display: none;
+}
+body.authenticated > *:not(#authOverlay) {
+    display: block;
+}
+body.authenticated #authOverlay {
+    display: none;
+}
+
+        /* Floating roses & hearts background (inserted) */
+        .floating-flowers{
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0; /* content uses z-index:1 so it stays above */
+            overflow: hidden;
+        }
+        .floating-flowers .float{
+            position: absolute;
+            bottom: -10%;
+            will-change: transform, opacity;
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.95;
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.06));
+            animation-name: floatUp, sway, spin;
+            animation-timing-function: linear, ease-in-out, linear;
+            animation-iteration-count: infinite, infinite, infinite;
+        }
+
+        @keyframes floatUp {
+            0%   { transform: translateY(0) translateX(0); opacity: 0; }
+            8%   { opacity: 1; }
+            100% { transform: translateY(-130vh) translateX(0); opacity: 0.95; }
+        }
+        @keyframes sway {
+            0%   { transform: translateX(0); }
+            50%  { transform: translateX(18px); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes spin {
+            0%   { rotate: 0deg; }
+            100% { rotate: 360deg; }
+        }
+
+        /* small accessibility reduction on motion if user prefers reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .floating-flowers .float {
+                animation: none;
+                opacity: 0.8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Two-step Auth Overlay -->
+    <div id="authOverlay" class="auth-overlay" aria-hidden="false">
+        <div class="auth-container" role="dialog" aria-labelledby="authTitle" aria-modal="true">
+            <!-- Step 1: Email + Phone -->
+            <div id="step1" class="auth-step" aria-live="polite">
+                <h2 id="authTitle">Welcome — Please verify</h2>
+                <p class="lead-text">Enter your email and phone number. We'll send a 4-digit access code to admin. Take the code from admin (Lalit)</p>
+                <input type="email" id="emailInput" placeholder="Enter your email" autocomplete="email" required>
+                <input type="tel" id="phoneInput" placeholder="Enter phone number" inputmode="numeric" pattern="[0-9]*" maxlength="10" required>
+                <div class="auth-actions">
+                    <button id="nextToOtp" class="btn">Send Code</button>
+                </div>
+                <p id="step1Error" class="error-message" aria-live="assertive"></p>
+            </div>
+
+            <!-- Step 2: OTP Input -->
+            <div id="step2" class="auth-step" style="display:none;" aria-live="polite">
+                <h2>Enter Access Code</h2>
+                <p class="lead-text">We sent a 4-digit code to the admin. Ask Admin for the code</p>
+                <input type="password" id="otpInput" maxlength="4" placeholder="Enter 4-digit code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
+                <div class="auth-actions">
+                    <button id="backToStep1" class="btn secondary">Back</button>
+                    <button id="submitOtp" class="btn">Verify</button>
+                </div>
+                <p id="step2Error" class="error-message" aria-live="assertive"></p>
+            </div>
+        </div>
+    </div>
+
+    <h1>When Two Souls Met in the Gym — Our Love Story</h1>
+
+    <br>
+    <!-- Story split into short lines/paragraphs that reveal on scroll -->
+    <div class="story" aria-label="Our love story">
+        <p class="lead reveal" style="--i:0">
+           They say love finds you when you least expect it.
+For me, it happened on 28th June 2025, inside a place meant for breaking limits — the gym. I didn’t know that day I’d end up meeting someone who’d redefine what “strength” really means — not just physical, but emotional, too.
+That was the day I met Himanshi. </p>
+        <p class="lead reveal" style="--i:1">
+    It wasn’t long before I realized I wasn’t the only one feeling that magnetic pull. Slowly, we began noticing each other more — those small smiles, shared playlists, casual gym talk that somehow turned into late-night conversations.
+
+And then it happened — we both fell in love.   <p class="lead reveal" style="--i:2">
+         </p>
+        <p class="lead reveal" style="--i:3">
+      What started as two people crossing paths at the gym turned into a story neither of us could’ve written better.
+Because sometimes, love doesn’t need grand gestures or perfect timing. Sometimes, it just takes one look, one shared moment, and the courage to let it grow. </p>
+        <p class="lead reveal" style="--i:5">
+       Here’s to us — to all the happy moments we’ve shared, and to all the beautiful memories we’re yet to create together. ❤️   </p>
+    </div>
+
+    <!-- Carousel: replace image paths (images/photo1.jpg etc.) with your real files -->
+    <section class="carousel" aria-label="Image carousel">
+        <div class="carousel-track">
+            <!-- All 22 slides -->
+            <div class="carousel-slide">
+                <img src="assets/1.jpg" alt="Our special moment 1" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/2.jpg" alt="Our special moment 2" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/3.jpg" alt="Our special moment 3" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/4.jpg" alt="Our special moment 4" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/5.jpg" alt="Our special moment 5" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/6.jpg" alt="Our special moment 6" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/7.jpg" alt="Our special moment 7" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/8.jpg" alt="Our special moment 8" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/9.jpg" alt="Our special moment 9" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/10.jpg" alt="Our special moment 10" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/11.jpg" alt="Our special moment 11" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/12.jpg" alt="Our special moment 12" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/13.jpg" alt="Our special moment 13" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/14.jpg" alt="Our special moment 14" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/15.jpg" alt="Our special moment 15" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/16.jpg" alt="Our special moment 16" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/17.jpg" alt="Our special moment 17" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/18.jpg" alt="Our special moment 18" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/19.jpg" alt="Our special moment 19" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/20.jpg" alt="Our special moment 20" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/21.jpg" alt="Our special moment 21" loading="lazy">
+            </div>
+            <div class="carousel-slide">
+                <img src="assets/22.jpg" alt="Our special moment 22" loading="lazy">
+            </div>
+        </div>
+
+        <button class="carousel-btn prev" aria-label="Previous slide">&larr;</button>
+        <button class="carousel-btn next" aria-label="Next slide">&rarr;</button>
+
+        <div class="carousel-dots" role="tablist" aria-label="Slide dots">
+            <button class="carousel-dot active" aria-label="Slide 1"></button>
+            <button class="carousel-dot" aria-label="Slide 2"></button>
+            <button class="carousel-dot" aria-label="Slide 3"></button>
+            <button class="carousel-dot" aria-label="Slide 4"></button>
+            <button class="carousel-dot" aria-label="Slide 5"></button>
+            <button class="carousel-dot" aria-label="Slide 6"></button>
+            <button class="carousel-dot" aria-label="Slide 7"></button>
+            <button class="carousel-dot" aria-label="Slide 8"></button>
+            <button class="carousel-dot" aria-label="Slide 9"></button>
+            <button class="carousel-dot" aria-label="Slide 10"></button>
+            <button class="carousel-dot" aria-label="Slide 11"></button>
+            <button class="carousel-dot" aria-label="Slide 12"></button>
+            <button class="carousel-dot" aria-label="Slide 13"></button>
+            <button class="carousel-dot" aria-label="Slide 14"></button>
+            <button class="carousel-dot" aria-label="Slide 15"></button>
+            <button class="carousel-dot" aria-label="Slide 16"></button>
+            <button class="carousel-dot" aria-label="Slide 17"></button>
+            <button class="carousel-dot" aria-label="Slide 18"></button>
+            <button class="carousel-dot" aria-label="Slide 19"></button>
+            <button class="carousel-dot" aria-label="Slide 20"></button>
+            <button class="carousel-dot" aria-label="Slide 21"></button>
+            <button class="carousel-dot" aria-label="Slide 22"></button>
+        </div>
+    </section>
+
+    <!-- Add footer -->
+    <footer class="footer">
+        <p class="names" style="margin: 0; font-size: 1.1rem;">
+            <span class="heart">❤️</span> 
+            Himanshi & Lalit 
+            <span class="heart">❤️</span>
+        </p>
+        <br>
+        <p class="email" style="margin: 0.5rem 0 0;text-decoration: underline;">
+            himanshi@lalit.org
+        </p>
+        <br>
+        <p style="margin: 0.5rem 0 0;">
+            Follow us on <a href="https://www.instagram.com/notyouravgpahadi" target="_blank" style="text-decoration: underline; color: var(--accent);">Instagram</a>
+        </p>
+    </footer>
+
+    <div class="floating-flowers" aria-hidden="true"></div>
+
+
+    <!-- Keep existing external script (carousel etc.) -->
+    <script src="index.js" type="text/javascript"></script>
+    
+</body>
+</html>
